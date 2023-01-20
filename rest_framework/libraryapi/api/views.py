@@ -1,9 +1,10 @@
-from .serializer import BookSerializer, CustomerSerializer, AccountSerializer, DepositSerializer
-from .models import Book, Customer, Account, Deposit
+from .serializer import BookSerializer, CustomerSerializer, AccountSerializer, DepositSerializer, OrderSerializer
+from .models import Book, Customer, Account, Deposit, Order
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from .actions import make_order, filter_user_account, book_exists
 
 
 class BookViewList(generics.ListAPIView):
@@ -33,6 +34,9 @@ class AccountView(generics.RetrieveUpdateAPIView):
 
 
 class DepositView(APIView):
+    serializer_class = DepositSerializer
+    queryset = Deposit.objects.all()
+    
     def post(self, request, *args, **kwargs):
         DepositSerializer(data=request.data).is_valid(raise_exception=True)
         serializer = DepositSerializer(data=request.data)
@@ -52,9 +56,28 @@ class DepositView(APIView):
         count = len(deposits)
         if count == 0:
             return Response({"message": "You haven't made any deposits yet"})
-        else:    
+        else:
             serializer = DepositSerializer(deposits, many=True)
             latest_id = serializer.data[-1].get('id')
             latest_deposit = deposits.get(pk=latest_id)
             latest_dep_serializer = DepositSerializer(latest_deposit)
             return Response({"Your last deposit": latest_dep_serializer.data})
+
+
+class OrderView(APIView):
+    serializer_class = OrderSerializer
+    queryset = Order.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        account = filter_user_account(
+            self.request.user, self.request.data['customer'])
+
+        # book = Book.objects.get(pk=self.request.data['book'])
+        book = book_exists(self.request.data['book'])
+
+        make_order(account, book)
+        return Response(serializer.data)

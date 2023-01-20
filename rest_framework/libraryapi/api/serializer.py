@@ -1,4 +1,4 @@
-from .models import Book, Customer, Account, Deposit
+from .models import Book, Customer, Account, Deposit, Order
 from rest_framework import serializers
 
 
@@ -36,7 +36,8 @@ class DepositSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super(DepositSerializer, self).__init__(*args, **kwargs)
         if 'request' in self.context:
-            self.fields['account'] = self.fields['account']\
+            # if u want to add this with pretty rest framewrok interface, then write  "self.fields['account'].queryset" instead of "self.fields['account']"
+            self.fields['account'].queryset = self.fields['account']\
                 .queryset.filter(user=self.context['view'].request.user.id)
 
     def create(self, validated_data):
@@ -65,4 +66,27 @@ class DepositSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ('id', 'date', 'amount', 'account')
         model = Deposit
+        read_only_fields = ['id', 'date']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        super(OrderSerializer, self).__init__(*args, **kwargs)
+        if 'request' in self.context:
+            self.fields['customer'].queryset = self.fields['customer']\
+                .queryset.filter(user=self.context['view'].request.user.id)
+
+    def validate(self, data):
+        try:
+            data['book'] = Book.objects.get(pk=data['book'].id)
+        except Exception as ex:
+            print(ex)
+            raise serializers.ValidationError(
+                ('No such book')
+            )
+        return data
+
+    class Meta:
+        fields = ('id', 'customer', 'book', 'date')
+        model = Order
         read_only_fields = ['id', 'date']

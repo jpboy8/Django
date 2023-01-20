@@ -33,3 +33,12 @@ class Deposit(models.Model):
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
     amount = models.DecimalField(max_digits=12, default=0, decimal_places=2)
     date = models.DateField(auto_now_add=True)
+
+
+class Order(models.Model):
+    customer = models.ForeignKey(Account, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return self.book.name
