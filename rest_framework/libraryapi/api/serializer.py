@@ -72,7 +72,7 @@ class DepositSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super(OrderSerializer, self).__init__(*args, **kwargs)
-        if 'request' in self.context:
+        if 'request' in self.context:            
             self.fields['customer'].queryset = self.fields['customer']\
                 .queryset.filter(user=self.context['view'].request.user.id)
 

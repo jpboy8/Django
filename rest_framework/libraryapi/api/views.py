@@ -78,6 +78,6 @@ class OrderView(APIView):
 
         # book = Book.objects.get(pk=self.request.data['book'])
         book = book_exists(self.request.data['book'])
-
+        print(serializer.data)
         make_order(account, book)
         return Response(serializer.data)
