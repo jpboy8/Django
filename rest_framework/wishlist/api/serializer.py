@@ -8,6 +8,7 @@ class WishlistSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super(WishlistSerializer, self).__init__(*args, **kwargs)
         if 'request' in self.context:
+            print(type(self.context['request'].user))
             self.fields['author'].queryset = User._default_manager.filter(
                 pk=self.context['request'].user.id)
 
@@ -18,6 +19,22 @@ class WishlistSerializer(serializers.ModelSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        super(ItemSerializer, self).__init__(*args, **kwargs)
+        if 'request' in self.context:
+            # get pk of wishlist
+            wishlist_id = kwargs.get('context').get('request')
+            str_n = str(wishlist_id)
+
+            # get integer from kwargs.get('context').get('request')
+            for i in str_n:
+                if i.isdigit():
+                    wishlist_id = int(i)
+
+            # limit choices of wishlists in browsable api
+            self.fields['wishlist'].queryset = Wishlist._default_manager\
+                .filter(pk=wishlist_id)
+
     class Meta:
         fields = ['id', 'wishlist', 'name', 'description', 'date']
         read_only_fields = ['id']
