@@ -2,6 +2,10 @@ from .models import Wishlist, Item
 from .serializer import WishlistSerializer, ItemSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
+from .permissions import IsOwner
+from django.shortcuts import get_object_or_404
+
 # Create your views here.
 
 
@@ -25,17 +29,26 @@ class WishlistView(APIView):
 
 class CreateItemView(APIView):
     serializer_class = ItemSerializer
-    queryset = Item.objects.all()
+    permission_classes = (IsOwner, )
 
     def get(self, request, *args, **kwargs):
         data = Item.objects.filter(wishlist=kwargs.get('pk'))
+        global wishlist_id
         wishlist_id = int(kwargs.get('pk'))
-        serializer = self.serializer_class(data, many=True, context={'request': wishlist_id})
-        return Response(serializer.data)    
+        # take wishlist object to check permission
+        wishlist = get_object_or_404(Wishlist, id=wishlist_id)
+        # check permission, because without it permisson_classes doesnt work
+        self.check_object_permissions(request, wishlist)
+        if wishlist_id > len(Wishlist.objects.all()):
+            return Response({'error': '404'}, status.HTTP_404_NOT_FOUND)
+        serializer = self.serializer_class(
+            data, many=True, context={'request': wishlist_id})
+        return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
+
         data = request.data
-        serializer = self.serializer_class(data=data) 
+        serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         w = Wishlist.objects.get(id=kwargs.get('pk'))
         serializer.save(wishlist=w)

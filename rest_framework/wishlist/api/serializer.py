@@ -25,7 +25,6 @@ class ItemSerializer(serializers.ModelSerializer):
             # get pk of wishlist
             wishlist_id = kwargs.get('context').get('request')
             str_n = str(wishlist_id)
-
             # get integer from kwargs.get('context').get('request')
             for i in str_n:
                 if i.isdigit():
