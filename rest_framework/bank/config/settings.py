@@ -41,8 +41,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'rest_framework.authtoken',
+    'drf_yasg',
     # local
-    'bank'
+    'bank',
 ]
 
 
