@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+import uuid
 
 
 class Book(models.Model):
@@ -28,6 +29,9 @@ class Account(models.Model):
     balance = models.DecimalField(max_digits=12, default=0, decimal_places=2)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
+    def __str__(self) -> str:
+        return f'{self.user.username}'
+
 
 class Deposit(models.Model):
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
@@ -42,3 +46,30 @@ class Order(models.Model):
 
     def __str__(self):
         return self.book.title
+
+
+class Cart(models.Model):
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True)
+    created = models.DateTimeField(auto_now_add=True)
+    owner = models.ForeignKey(Account, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return str(self.id)
+    
+
+class Cartitems(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, blank=True, null=True, related_name='items')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, blank=True, null=True, related_name='cartitems')
+    quantity = models.PositiveSmallIntegerField(default=0)
+
+    def __str__(self) -> str:
+        return f'{self.book.title}'
+    
+
+class CartOrder(models.Model):
+    customer = models.ForeignKey(Account, on_delete=models.CASCADE)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, blank=True, null=True)
+    date = models.DateField(auto_now_add=True, null=True)
+
+    def __str__(self) -> str:
+        return f'{self.cart} {self.date}'

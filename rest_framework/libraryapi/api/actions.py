@@ -1,4 +1,4 @@
-from .models import Account, Book
+from .models import Account, Book, Cart, Cartitems
 from django.db import transaction
 from django.core.exceptions import ValidationError
 
@@ -20,6 +20,26 @@ def make_order(account, book):
         book.count = book_count
         book.save()
 
+def make_order_cart(account, cart):
+    items = Cartitems.objects.filter(cart=cart)
+    price = sum([item.quantity * item.book.price for item in items])
+
+    if account.balance < price:
+        raise ValidationError("You don't have enough money")
+    
+    for item in items:
+        if item.book.count < item.quantity:
+            raise ValidationError(f"There are not enough copies of this book in stock: {item.book.title}")
+
+    with transaction.atomic():
+        for item in items:
+            item.book.count -= item.quantity
+            item.book.save()
+            item.delete()
+
+        account_balance = account.balance - price
+        account.balance = account_balance
+        account.save()
 
 def filter_user_account(user, account_id):
     try:
@@ -37,3 +57,11 @@ def book_exists(book_id):
         print(ex)
         raise ValueError("No such book")
     return book
+
+def cart_exists(cart_id):
+    try:
+        cart = Cart.objects.get(pk=cart_id)
+    except Exception as ex:
+        print(ex)
+        raise ValueError("No such book")
+    return cart
